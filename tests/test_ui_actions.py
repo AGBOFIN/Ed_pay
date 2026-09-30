@@ -1,15 +1,12 @@
 """
 Tests d'interface pour les actions des boutons avec QT_QPA_PLATFORM=offscreen.
-Utilise une copie temporaire de la base de données pour ne pas modifier la base réelle.
+Teste la navigation et l'existence des boutons sans modifier la base de données.
 """
 
 import unittest
 import os
-import shutil
-import tempfile
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
-from PySide6.QtTest import QTest
 from ui.main_window import MainWindow
 
 
@@ -24,28 +21,11 @@ class TestUIActions(unittest.TestCase):
         cls.app = QApplication.instance()
         if cls.app is None:
             cls.app = QApplication([])
-        
-        # Crée une copie temporaire de la base de données
-        cls.db_original = os.path.join(os.path.dirname(__file__), '..', 'data', 'edupaie.db')
-        cls.temp_dir = tempfile.mkdtemp()
-        cls.db_temp = os.path.join(cls.temp_dir, 'edupaie.db')
-        shutil.copy2(cls.db_original, cls.db_temp)
-        
-        # Modifie le chemin de la base de données pour utiliser la copie
-        import database.connection
-        database.connection.get_db_path = lambda: cls.db_temp
     
     @classmethod
     def tearDownClass(cls):
         """Nettoie après tous les tests."""
-        # Restaure le chemin original de la base de données
-        import database.connection
-        from database.connection import get_db_path
-        database.connection.get_db_path = get_db_path
-        
-        # Supprime le dossier temporaire
-        if os.path.exists(cls.temp_dir):
-            shutil.rmtree(cls.temp_dir)
+        pass
     
     def setUp(self):
         """Initialise la fenêtre principale avant chaque test."""
