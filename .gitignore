@@ -41,6 +41,7 @@ ENV/
 
 # Logs
 *.log
+edupaie_error.log
 
 # OS
 .DS_Store
