@@ -66,13 +66,8 @@ class MainWindow(QMainWindow):
         if self.eleves_widget is None:
             self.eleves_widget = ElevesWidget(main_window=self)
         
-        # Crée un widget central avec layout
-        central_widget = QWidget()
-        layout = QVBoxLayout(central_widget)
-        layout.addWidget(self.eleves_widget)
-        layout.setContentsMargins(0, 0, 0, 0)
-        
-        self.setCentralWidget(central_widget)
+        # Utilise le widget comme widget central directement
+        self.setCentralWidget(self.eleves_widget)
         self.status_bar.showMessage("Gestion des élèves")
     
     def enregistrer_paiement(self):
@@ -85,13 +80,8 @@ class MainWindow(QMainWindow):
         if self.dashboard_widget is None:
             self.dashboard_widget = DashboardWidget()
         
-        # Crée un widget central avec layout
-        central_widget = QWidget()
-        layout = QVBoxLayout(central_widget)
-        layout.addWidget(self.dashboard_widget)
-        layout.setContentsMargins(0, 0, 0, 0)
-        
-        self.setCentralWidget(central_widget)
+        # Utilise le widget comme widget central directement
+        self.setCentralWidget(self.dashboard_widget)
         self.status_bar.showMessage("Tableau de bord")
     
     def rafraichir_tableau_de_bord(self):
