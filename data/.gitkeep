@@ -1,0 +1,2 @@
+# Ce fichier permet de conserver le répertoire data dans Git
+# malgré le fait que les fichiers .db sont ignorés

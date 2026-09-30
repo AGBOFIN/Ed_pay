@@ -1,0 +1,5 @@
+PySide6>=6.6.0
+fpdf2==2.7.6
+
+# Pour le packaging (développement uniquement)
+# pyinstaller>=6.0.0
