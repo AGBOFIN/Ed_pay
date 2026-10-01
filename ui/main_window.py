@@ -3,7 +3,7 @@ Fenêtre principale de l'application EduPaie.
 Contient le menu principal et la barre de statut.
 """
 
-from PySide6.QtWidgets import QMainWindow, QStatusBar, QMenuBar, QMenu, QWidget, QVBoxLayout
+from PySide6.QtWidgets import QMainWindow, QStatusBar, QMenuBar, QMenu, QStackedWidget
 from PySide6.QtCore import Qt
 from ui.eleves_widget import ElevesWidget
 from ui.dashboard_widget import DashboardWidget
@@ -18,8 +18,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("EduPaie - Gestion des Paiements Scolaires")
         self.setMinimumSize(1000, 700)
         
-        self.eleves_widget = None
-        self.dashboard_widget = None
         self.setup_ui()
         
         # Affiche le tableau de bord au démarrage
@@ -29,6 +27,18 @@ class MainWindow(QMainWindow):
         """Configure l'interface utilisateur."""
         self.create_menu_bar()
         self.create_status_bar()
+        
+        # UN QStackedWidget défini une seule fois comme widget central.
+        # Les écrans sont ajoutés une seule fois ; la navigation se fait
+        # avec setCurrentWidget, jamais avec setCentralWidget (qui détruit
+        # l'ancien widget central à chaque appel).
+        self.stack = QStackedWidget()
+        self.setCentralWidget(self.stack)
+        
+        self.dashboard_widget = DashboardWidget()
+        self.eleves_widget = ElevesWidget(main_window=self)
+        self.stack.addWidget(self.dashboard_widget)
+        self.stack.addWidget(self.eleves_widget)
     
     def create_menu_bar(self):
         """Crée la barre de menu."""
@@ -63,11 +73,7 @@ class MainWindow(QMainWindow):
     
     def afficher_gestion_eleves(self):
         """Affiche le widget de gestion des élèves."""
-        if self.eleves_widget is None:
-            self.eleves_widget = ElevesWidget(main_window=self)
-        
-        # Utilise le widget comme widget central directement
-        self.setCentralWidget(self.eleves_widget)
+        self.stack.setCurrentWidget(self.eleves_widget)
         self.status_bar.showMessage("Gestion des élèves")
     
     def enregistrer_paiement(self):
@@ -77,11 +83,7 @@ class MainWindow(QMainWindow):
     
     def afficher_tableau_de_bord(self):
         """Affiche le tableau de bord."""
-        if self.dashboard_widget is None:
-            self.dashboard_widget = DashboardWidget()
-        
-        # Utilise le widget comme widget central directement
-        self.setCentralWidget(self.dashboard_widget)
+        self.stack.setCurrentWidget(self.dashboard_widget)
         self.status_bar.showMessage("Tableau de bord")
     
     def rafraichir_tableau_de_bord(self):
