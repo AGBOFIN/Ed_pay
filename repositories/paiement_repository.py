@@ -18,7 +18,7 @@ class PaiementRepository:
             eleve_id: ID de l'élève
             
         Returns:
-            int: Total payé en centimes (entier), 0 si aucun paiement
+            int: Total payé en francs CFA (entier), 0 si aucun paiement
         """
         conn = get_connection()
         cursor = conn.cursor()
@@ -26,7 +26,7 @@ class PaiementRepository:
         try:
             cursor.execute(
                 """
-                SELECT COALESCE(SUM(montant * 100), 0) as total
+                SELECT COALESCE(SUM(montant), 0) as total
                 FROM paiement
                 WHERE eleve_id = ?
                 """,
@@ -74,12 +74,12 @@ class PaiementRepository:
             eleve_id: ID de l'élève
             
         Returns:
-            int: Total dû en centimes
+            int: Total dû en francs CFA
         """
         cursor = conn.cursor()
         cursor.execute("SELECT total_du FROM eleve WHERE id = ?", (eleve_id,))
         row = cursor.fetchone()
-        return int(row['total_du'] * 100)
+        return int(row['total_du'])
     
     def obtenir_total_paye_eleve(self, conn, eleve_id):
         """
@@ -90,12 +90,12 @@ class PaiementRepository:
             eleve_id: ID de l'élève
             
         Returns:
-            int: Total payé en centimes
+            int: Total payé en francs CFA
         """
         cursor = conn.cursor()
         cursor.execute(
             """
-            SELECT COALESCE(SUM(montant * 100), 0) as total
+            SELECT COALESCE(SUM(montant), 0) as total
             FROM paiement
             WHERE eleve_id = ?
             """,
@@ -141,11 +141,11 @@ class PaiementRepository:
         Args:
             conn: Connexion existante à la base (transaction déjà commencée)
             eleve_id: ID de l'élève
-            montant: Montant du paiement en euros
+            montant: Montant du paiement en francs CFA
             date: Date du paiement
             mode: Mode de paiement
             numero_recu: Numéro de reçu unique
-            solde_apres: Solde restant après ce paiement (en centimes)
+            solde_apres: Solde restant après ce paiement (en francs CFA)
             
         Returns:
             int: ID du paiement créé

@@ -39,16 +39,16 @@ class FicheEleveService:
         paiements = self.paiement_repository.lister_par_eleve(eleve_id)
         
         # Calcule les totaux
-        total_du_centimes = eleve['total_du']
-        total_paye_centimes = sum(p['montant'] * 100 for p in paiements)
-        solde_actuel = SoldeService.calculer_solde(total_du_centimes, total_paye_centimes)
-        statut = SoldeService.determiner_statut(total_du_centimes, total_paye_centimes)
+        total_du_fcfa = eleve['total_du']
+        total_paye_fcfa = sum(p['montant'] for p in paiements)
+        solde_actuel = SoldeService.calculer_solde(total_du_fcfa, total_paye_fcfa)
+        statut = SoldeService.determiner_statut(total_du_fcfa, total_paye_fcfa)
         
         # Construit les données de la fiche
         donnees_fiche = {
             'eleve': eleve,
-            'total_du': total_du_centimes,
-            'total_paye': total_paye_centimes,
+            'total_du': total_du_fcfa,
+            'total_paye': total_paye_fcfa,
             'solde': solde_actuel,
             'statut': statut,
             'paiements': paiements,
