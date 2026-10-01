@@ -49,3 +49,7 @@ Thumbs.db
 
 # PySide6
 *.ui
+data/recus/
+test_out.txt
+faulthandler_out.txt
+edupaie_error.log
