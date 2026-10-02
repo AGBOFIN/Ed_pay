@@ -8,6 +8,10 @@ erDiagram
     
     ELEVE ||--o{ PAIEMENT : reçoit
     
+    CLASSE ||--o{ ELEVE : regroupe
+    
+    PARAMETRE ||--|| PAIEMENT : configure
+    
     SEQUENCE_RECUS {
         integer id PK
         integer derniere_valeur
@@ -31,6 +35,18 @@ erDiagram
         string mode
         string numero_recu UK
         integer solde_apres
+    }
+    
+    CLASSE {
+        integer id PK
+        string nom UK
+        integer frais_defaut
+        integer actif
+    }
+    
+    PARAMETRE {
+        string cle PK
+        string valeur
     }
 ```
 
@@ -160,3 +176,45 @@ Active les contraintes de clés étrangères dans SQLite pour garantir :
 - Solde restant : `35 000 FCFA`
 - Tentative de paiement de `50 000 FCFA` → Refusé par le trigger
 - Message d'erreur affiché : "Le paiement dépasse le solde restant"
+
+### 9. Table `parametre`
+
+**Champs :**
+- `cle` : Clé du paramètre (PRIMARY KEY)
+  - Exemples : etablissement_nom, etablissement_adresse, annee_scolaire, recu_prefixe, paiement_modes
+- `valeur` : Valeur du paramètre (TEXT, NOT NULL)
+
+**Justification :**
+- Stockage flexible des paramètres de configuration
+- Permet d'ajouter de nouveaux paramètres sans modifier le schéma
+- Idempotent : peut être mis à jour sans affecter les données existantes
+
+**Paramètres typiques :**
+- Établissement : nom, adresse, téléphone, e-mail, devise, logo, pied de page du reçu
+- Année scolaire : année courante (ex: 2025-2026)
+- Reçus : préfixe des numéros (ex: REC)
+- Modes de paiement : liste des modes actifs (espèces, chèque, virement, mobile money)
+
+### 10. Table `classe`
+
+**Champs :**
+- `id` : Clé primaire auto-incrémentée
+- `nom` : Nom de la classe (UNIQUE, NOT NULL)
+  - Exemples : 6ème A, 5ème B, 4ème A
+- `frais_defaut` : Frais par défaut pour cette classe (en francs CFA)
+  - Contrainte CHECK (frais_defaut >= 0)
+  - Pré-remplit le champ total_du lors de la création d'un élève
+- `actif` : Indicateur d'activité (0 ou 1, DEFAULT 1)
+  - 1 : classe active (disponible dans le formulaire d'élève)
+  - 0 : classe désactivée (ne peut plus être sélectionnée mais reste en base)
+
+**Justification :**
+- Centralisation des frais par classe pour éviter les erreurs de saisie
+- Désactivation plutôt que suppression pour préserver l'historique
+- Contrainte UNIQUE sur le nom pour éviter les doublons
+- Permet de gérer les changements de frais d'une année à l'autre
+
+**Pourquoi désactiver plutôt que supprimer ?**
+- Les classes utilisées par des élèves ne peuvent pas être supprimées (contrainte d'intégrité)
+- La désactivation permet de conserver l'historique tout en empêchant les nouvelles inscriptions
+- Une classe peut être réactivée si nécessaire
