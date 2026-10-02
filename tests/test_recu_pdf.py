@@ -4,6 +4,9 @@ Tests unitaires pour la génération de reçus PDF.
 
 import unittest
 import os
+import shutil
+import tempfile
+from unittest import mock
 
 try:
     from services.recu_service import RecuService
@@ -20,6 +23,23 @@ class TestRecuPDF(unittest.TestCase):
     def setUp(self):
         """Initialise le service pour les tests."""
         self.recu_service = RecuService()
+    
+    @classmethod
+    def setUpClass(cls):
+        import services.recu_pdf as recu_pdf
+        cls.temp_dir = tempfile.mkdtemp(prefix="edupaie-recus-test-")
+        cls._patches = [
+            mock.patch.object(recu_pdf, "get_recus_dir", lambda: cls.temp_dir),
+            mock.patch.object(recu_pdf, "ensure_data_dirs", lambda: None),
+        ]
+        for patcher in cls._patches:
+            patcher.start()
+    
+    @classmethod
+    def tearDownClass(cls):
+        for patcher in cls._patches:
+            patcher.stop()
+        shutil.rmtree(cls.temp_dir, ignore_errors=True)
     
     def test_get_chemin_dossier_recus(self):
         """Test que le dossier recus est créé."""

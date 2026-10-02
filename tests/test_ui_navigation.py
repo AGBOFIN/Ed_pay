@@ -8,7 +8,7 @@ Reproduit trois bugs constatés sur le terrain :
   (c) le reçu PDF ne se génère pas (aucun paiement n'aboutit via l'interface,
       et solde_apres est corrompu par une conversion centimes/FCFA).
 
-Ces tests utilisent une COPIE temporaire de data/edupaie.db : la vraie base
+Ces tests utilisent une COPIE temporaire de data/edupaie-seed.db : la vraie base
 n'est jamais modifiée (vérifiée par empreinte SHA-256 avant/après).
 """
 
@@ -16,7 +16,7 @@ import unittest
 import os
 import sys
 import shutil
-import sqlite3
+from sqlcipher3 import dbapi2 as sqlite3
 import tempfile
 import hashlib
 import datetime
@@ -34,13 +34,18 @@ from ui.main_window import MainWindow
 from ui.paiement_dialog import PaiementDialog
 from ui.eleve_form_dialog import EleveFormDialog
 from ui.fiche_eleve_dialog import FicheEleveDialog
+from tests.database_helpers import (
+    connect_encrypted_test_database,
+    database_connection_patches,
+    make_encrypted_test_fixture,
+)
 import database.connection as db_connection
 import services.recu_pdf as recu_pdf
 import utils.resource_utils as resource_utils
 
 
 RACINE_PROJET = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_REELLE = os.path.join(RACINE_PROJET, 'data', 'edupaie.db')
+DB_REELLE = os.path.join(RACINE_PROJET, 'data', 'edupaie-seed.db')
 
 
 class TestNavigationEtRecuPDF(unittest.TestCase):
@@ -57,19 +62,13 @@ class TestNavigationEtRecuPDF(unittest.TestCase):
         cls.hash_db_avant = cls._sha256(DB_REELLE)
         cls.recus_reels_avant = sorted(os.listdir(os.path.join(RACINE_PROJET, 'data', 'recus')))
 
-        # Copie temporaire de la base (jamais data/edupaie.db)
-        cls.tmp = tempfile.mkdtemp(prefix='edupaie_tests_')
-        cls.db_tmp = os.path.join(cls.tmp, 'data', 'edupaie.db')
-        os.makedirs(os.path.dirname(cls.db_tmp))
-        shutil.copy2(DB_REELLE, cls.db_tmp)
+        # Copie temporaire du seed (jamais la base utilisateur chiffrée)
+        cls.tmp, cls.db_tmp, cls.key_tmp = make_encrypted_test_fixture(DB_REELLE)
         cls.recus_tmp = os.path.join(cls.tmp, 'recus')
         os.makedirs(cls.recus_tmp)
 
         # Redirige toute l'application vers la copie temporaire
-        cls._patches = [
-            mock.patch.object(db_connection, 'get_database_path', lambda: cls.db_tmp),
-            mock.patch.object(db_connection, 'ensure_data_dirs', lambda: None),
-            mock.patch.object(db_connection, 'copy_initial_database_if_needed', lambda: None),
+        cls._patches = database_connection_patches(cls.db_tmp, cls.key_tmp) + [
             mock.patch.object(recu_pdf, 'get_recus_dir', lambda: cls.recus_tmp),
             mock.patch.object(recu_pdf, 'ensure_data_dirs', lambda: None),
             mock.patch.object(resource_utils, 'get_app_dir', lambda: cls.tmp),
@@ -255,7 +254,7 @@ class TestNavigationEtRecuPDF(unittest.TestCase):
                          "Aucune exception ne doit être levée par les clics")
 
         # « Supprimer » suivie de Non ne doit rien supprimer
-        with sqlite3.connect(self.db_tmp) as conn:
+        with connect_encrypted_test_database(self.db_tmp, self.key_tmp) as conn:
             nb_eleves = conn.execute("SELECT COUNT(*) FROM eleve").fetchone()[0]
         self.assertEqual(nb_eleves, 20, "Répondre Non à la confirmation ne doit rien supprimer")
 
@@ -278,8 +277,7 @@ class TestNavigationEtRecuPDF(unittest.TestCase):
         eleve_id = eleve['id']
 
         # État attendu avant le paiement
-        with sqlite3.connect(self.db_tmp) as conn:
-            conn.row_factory = sqlite3.Row
+        with connect_encrypted_test_database(self.db_tmp, self.key_tmp) as conn:
             eleve = conn.execute(
                 "SELECT total_du,"
                 " (SELECT COALESCE(SUM(montant), 0) FROM paiement WHERE eleve_id = ?) AS paye"
@@ -311,8 +309,7 @@ class TestNavigationEtRecuPDF(unittest.TestCase):
         self.assertIn('PaiementDialog', self.dialogs_ouverts)
 
         # Le paiement est en base avec le bon solde en FCFA
-        with sqlite3.connect(self.db_tmp) as conn:
-            conn.row_factory = sqlite3.Row
+        with connect_encrypted_test_database(self.db_tmp, self.key_tmp) as conn:
             paiement = conn.execute(
                 "SELECT numero_recu, montant, solde_apres FROM paiement"
                 " WHERE eleve_id = ? ORDER BY id DESC LIMIT 1", (eleve_id,)).fetchone()
@@ -343,7 +340,7 @@ class TestNavigationEtRecuPDF(unittest.TestCase):
     def test_z_base_reelle_intacte(self):
         """La vraie base et le dossier des reçus ne doivent jamais être modifiés."""
         self.assertEqual(self._sha256(DB_REELLE), self.hash_db_avant,
-                         "data/edupaie.db ne doit jamais être modifiée par les tests")
+                         "data/edupaie-seed.db ne doit jamais être modifiée par les tests")
         recus_reels = sorted(os.listdir(os.path.join(RACINE_PROJET, 'data', 'recus')))
         self.assertEqual(recus_reels, self.recus_reels_avant,
                          "data/recus ne doit jamais être modifié par les tests")

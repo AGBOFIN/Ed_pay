@@ -3,7 +3,7 @@ Service pour l'enregistrement des paiements.
 Contient la logique métier et les validations.
 """
 
-import sqlite3
+from sqlcipher3 import dbapi2 as sqlite3
 from datetime import datetime
 from repositories.paiement_repository import PaiementRepository
 from repositories.eleve_repository import EleveRepository

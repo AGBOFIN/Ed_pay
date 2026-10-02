@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 def get_db_path():
     """Retourne le chemin vers la base de données."""
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(current_dir, '..', 'data', 'edupaie.db')
+    return os.path.join(current_dir, '..', 'data', 'edupaie-seed.db')
 
 
 def get_schema_path():

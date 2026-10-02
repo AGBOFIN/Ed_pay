@@ -15,9 +15,11 @@ from services.eleve_service import EleveService
 from repositories.eleve_repository import EleveRepository
 from repositories.paiement_repository import PaiementRepository
 from services.eleve_service import ValidationError
-import database.connection as db_connection
-import utils.resource_utils as resource_utils
 from unittest import mock
+from tests.database_helpers import (
+    create_encrypted_test_database,
+    database_connection_patches,
+)
 
 
 class TestCalculSolde(unittest.TestCase):
@@ -32,17 +34,16 @@ class TestCalculSolde(unittest.TestCase):
             cls.app = QApplication([])
         
         # Crée une copie temporaire de la base de données
-        cls.db_original = os.path.join(os.path.dirname(__file__), '..', 'data', 'edupaie.db')
+        cls.db_original = os.path.join(os.path.dirname(__file__), '..', 'data', 'edupaie-seed.db')
         cls.temp_dir = tempfile.mkdtemp()
-        cls.db_temp = os.path.join(cls.temp_dir, 'edupaie.db')
-        shutil.copy2(cls.db_original, cls.db_temp)
+        cls.db_plain = os.path.join(cls.temp_dir, 'edupaie-plain.db')
+        cls.db_temp = os.path.join(cls.temp_dir, 'edupaie-encrypted.db')
+        shutil.copy2(cls.db_original, cls.db_plain)
+        cls.key_temp = create_encrypted_test_database(cls.db_plain, cls.db_temp)
+        os.remove(cls.db_plain)
         
         # Redirige vers la copie temporaire
-        cls._patches = [
-            mock.patch.object(db_connection, 'get_database_path', lambda: cls.db_temp),
-            mock.patch.object(db_connection, 'ensure_data_dirs', lambda: None),
-            mock.patch.object(db_connection, 'copy_initial_database_if_needed', lambda: None),
-        ]
+        cls._patches = database_connection_patches(cls.db_temp, cls.key_temp)
         for p in cls._patches:
             p.start()
     

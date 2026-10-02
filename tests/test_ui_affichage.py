@@ -5,9 +5,11 @@ Vérifie que les tableaux affichent correctement toutes les données.
 
 import unittest
 import os
+import shutil
 from PySide6.QtWidgets import QApplication
 from ui.dashboard_widget import DashboardWidget
 from ui.eleves_widget import ElevesWidget
+from tests.database_helpers import make_encrypted_test_fixture, database_connection_patches
 
 
 class TestUIAffichage(unittest.TestCase):
@@ -21,6 +23,18 @@ class TestUIAffichage(unittest.TestCase):
         cls.app = QApplication.instance()
         if cls.app is None:
             cls.app = QApplication([])
+
+        source_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'edupaie-seed.db')
+        cls.temp_dir, cls.db_temp, cls.key_temp = make_encrypted_test_fixture(source_path)
+        cls._patches = database_connection_patches(cls.db_temp, cls.key_temp)
+        for patcher in cls._patches:
+            patcher.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        for patcher in cls._patches:
+            patcher.stop()
+        shutil.rmtree(cls.temp_dir, ignore_errors=True)
     
     def setUp(self):
         """Initialise les widgets avant chaque test."""
@@ -66,6 +80,16 @@ class TestUIAffichage(unittest.TestCase):
         for header in headers:
             self.assertNotIn("€", header, f"En-tête '{header}' ne doit pas contenir €")
     
+    def test_taux_recouvrement_est_indisponible_sans_montant(self):
+        self.dashboard.mettre_a_jour_cartes({
+            "nb_eleves": 0,
+            "total_encaisse": 0,
+            "total_restant_du": 0,
+            "nb_eleves_non_soldes": 0,
+        })
+
+        self.assertEqual(self.dashboard.taux_recouvrement_card.valeur_label.text(), "N/A")
+
     def test_eleves_widget_affiche_20_lignes_completes(self):
         """Vérifie que la liste des élèves affiche 20 lignes complètes."""
         # Attend que les données soient chargées

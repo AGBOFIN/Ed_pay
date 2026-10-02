@@ -24,7 +24,7 @@ def resource_path(relative_path):
         base_path = sys._MEIPASS
     except AttributeError:
         # En développement, utilise le répertoire du script
-        base_path = os.path.dirname(os.path.abspath(__file__))
+        base_path = get_app_dir()
     
     return os.path.join(base_path, relative_path)
 
@@ -49,16 +49,30 @@ def get_app_dir():
 
 def get_database_path():
     """
-    Retourne le chemin vers la base de données.
-    
-    En PyInstaller avec --onefile, la base doit être à côté de l'exécutable
-    car le dossier temporaire est en lecture seule.
+    Retourne le chemin vers la base chiffrée du profil Windows courant.
     
     Returns:
         str: Chemin absolu vers la base de données
     """
-    app_dir = get_app_dir()
-    return os.path.join(app_dir, "data", "edupaie.db")
+    return os.path.join(get_user_data_dir(), "data", "edupaie.db")
+
+
+def get_user_data_dir():
+    """Retourne le dossier privé EduPaie du profil Windows courant."""
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if not local_app_data:
+        local_app_data = os.path.join(os.path.expanduser("~"), "AppData", "Local")
+    return os.path.join(local_app_data, "EduPaie")
+
+
+def get_database_key_path():
+    """Retourne le chemin de la clé SQLCipher protégée par DPAPI."""
+    return os.path.join(get_user_data_dir(), "keys", "database.dpapi")
+
+
+def get_legacy_database_path():
+    """Retourne l'ancien emplacement de la base active à migrer."""
+    return os.path.join(get_app_dir(), "data", "edupaie.db")
 
 
 def get_initial_database_path():
@@ -70,20 +84,17 @@ def get_initial_database_path():
     Returns:
         str: Chemin absolu vers la base de données initiale
     """
-    return resource_path("data/edupaie.db")
+    return resource_path("data/edupaie-seed.db")
 
 
 def get_recus_dir():
     """
-    Retourne le chemin vers le dossier des reçus PDF.
-    
-    En PyInstaller, ce dossier doit être à côté de l'exécutable.
+    Retourne le chemin vers le dossier privé des reçus PDF.
     
     Returns:
         str: Chemin absolu vers le dossier des reçus
     """
-    app_dir = get_app_dir()
-    return os.path.join(app_dir, "data", "recus")
+    return os.path.join(get_user_data_dir(), "data", "recus")
 
 
 def ensure_data_dirs():
@@ -91,33 +102,20 @@ def ensure_data_dirs():
     S'assure que les dossiers de données existent.
     Crée data/ et data/recus si nécessaire.
     """
-    app_dir = get_app_dir()
-    data_dir = os.path.join(app_dir, "data")
+    data_dir = os.path.join(get_user_data_dir(), "data")
     recus_dir = os.path.join(data_dir, "recus")
-    
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
-    
-    if not os.path.exists(recus_dir):
-        os.makedirs(recus_dir)
+    os.makedirs(recus_dir, exist_ok=True)
 
 
 def copy_initial_database_if_needed():
-    """
-    Copie la base de données initiale si elle n'existe pas.
-    
-    En PyInstaller avec --onefile, la base doit être à côté de l'exécutable.
-    Si elle n'existe pas, on copie la base embarquée à cet endroit.
-    """
-    db_path = get_database_path()
-    initial_db_path = get_initial_database_path()
-    
-    if not os.path.exists(db_path):
-        # Assure que le dossier data/ existe
-        data_dir = os.path.dirname(db_path)
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
-        
-        # Copie la base initiale
-        import shutil
-        shutil.copy2(initial_db_path, db_path)
+    """Initialise ou migre la base active vers SQLCipher."""
+    from database.encryption import ensure_encrypted_database
+
+    legacy_path = get_legacy_database_path()
+    return ensure_encrypted_database(
+        get_database_path(),
+        get_database_key_path(),
+        get_initial_database_path(),
+        legacy_database_path=legacy_path,
+        remove_legacy=bool(legacy_path and getattr(sys, 'frozen', False)),
+    )

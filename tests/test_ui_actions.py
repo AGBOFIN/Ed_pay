@@ -6,19 +6,15 @@ Utilise une copie temporaire de la base de données.
 import unittest
 import os
 import shutil
-import tempfile
+
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import Qt
-from PySide6.QtTest import QTest
 from ui.main_window import MainWindow
-import database.connection as db_connection
-import utils.resource_utils as resource_utils
-from unittest import mock
+from tests.database_helpers import make_encrypted_test_fixture, database_connection_patches
 
 
 class TestUIActions(unittest.TestCase):
     """Tests pour les actions des boutons de l'interface."""
-    
+
     @classmethod
     def setUpClass(cls):
         """Initialise l'application Qt une seule fois."""
@@ -26,27 +22,18 @@ class TestUIActions(unittest.TestCase):
         cls.app = QApplication.instance()
         if cls.app is None:
             cls.app = QApplication([])
-        
-        # Crée une copie temporaire de la base de données
-        cls.db_original = os.path.join(os.path.dirname(__file__), '..', 'data', 'edupaie.db')
-        cls.temp_dir = tempfile.mkdtemp()
-        cls.db_temp = os.path.join(cls.temp_dir, 'edupaie.db')
-        shutil.copy2(cls.db_original, cls.db_temp)
-        
-        # Redirige vers la copie temporaire
-        cls._patches = [
-            mock.patch.object(db_connection, 'get_database_path', lambda: cls.db_temp),
-            mock.patch.object(db_connection, 'ensure_data_dirs', lambda: None),
-            mock.patch.object(db_connection, 'copy_initial_database_if_needed', lambda: None),
-        ]
-        for p in cls._patches:
-            p.start()
-    
+
+        cls.db_original = os.path.join(os.path.dirname(__file__), '..', 'data', 'edupaie-seed.db')
+        cls.temp_dir, cls.db_temp, cls.key_temp = make_encrypted_test_fixture(cls.db_original)
+        cls._patches = database_connection_patches(cls.db_temp, cls.key_temp)
+        for patcher in cls._patches:
+            patcher.start()
+
     @classmethod
     def tearDownClass(cls):
         """Nettoie après tous les tests."""
-        for p in cls._patches:
-            p.stop()
+        for patcher in cls._patches:
+            patcher.stop()
         if os.path.exists(cls.temp_dir):
             shutil.rmtree(cls.temp_dir)
     

@@ -33,9 +33,9 @@ ENV/
 *.swo
 *~
 
-# Base de données SQLite (sauf data/edupaie.db qui est un livrable)
+# Bases de données : seul le seed de démonstration est versionné; les données actives restent locales.
 *.db
-!data/edupaie.db
+!data/edupaie-seed.db
 *.sqlite
 *.sqlite3
 

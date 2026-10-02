@@ -3,12 +3,29 @@ Tests unitaires pour le service d'enregistrement de paiements.
 """
 
 import unittest
+import os
+import shutil
 from datetime import datetime, timedelta
 from services.paiement_service import PaiementService, ValidationError
+from tests.database_helpers import make_encrypted_test_fixture, database_connection_patches
 
 
 class TestPaiementService(unittest.TestCase):
     """Tests pour PaiementService."""
+
+    @classmethod
+    def setUpClass(cls):
+        source_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'edupaie-seed.db')
+        cls.temp_dir, cls.db_temp, cls.key_temp = make_encrypted_test_fixture(source_path)
+        cls._patches = database_connection_patches(cls.db_temp, cls.key_temp)
+        for patcher in cls._patches:
+            patcher.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        for patcher in cls._patches:
+            patcher.stop()
+        shutil.rmtree(cls.temp_dir, ignore_errors=True)
     
     def setUp(self):
         """Initialise le service pour les tests."""

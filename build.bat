@@ -27,15 +27,8 @@ REM Construit l'exécutable
 echo Construction de l'exécutable...
 echo.
 
-REM Vérifie si l'icône existe
-if exist "resources\edupaie.ico" (
-    echo Utilisation de l'icône resources\edupaie.ico
-    pyinstaller --onefile --windowed --add-data "data/edupaie.db;data" --add-data "resources;resources" --name "EduPaie" --icon=resources\edupaie.ico main.py
-) else (
-    echo AVERTISSEMENT : L'icône resources\edupaie.ico n'existe pas.
-    echo L'exécutable sera construit sans icône.
-    pyinstaller --onefile --windowed --add-data "data/edupaie.db;data" --add-data "resources;resources" --name "EduPaie" main.py
-)
+REM Construit depuis le spec partagé (seed de démonstration, ressources et icône)
+python -m PyInstaller --noconfirm EduPaie.spec
 
 if %errorlevel% neq 0 (
     echo.

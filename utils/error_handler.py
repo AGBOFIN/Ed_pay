@@ -16,8 +16,9 @@ def get_log_file_path():
     Returns:
         str: Chemin absolu vers le fichier de log
     """
-    from utils.resource_utils import get_app_dir
-    app_dir = get_app_dir()
+    from utils.resource_utils import get_user_data_dir
+    app_dir = get_user_data_dir()
+    os.makedirs(app_dir, exist_ok=True)
     return os.path.join(app_dir, "edupaie_error.log")
 
 

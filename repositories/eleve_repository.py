@@ -3,7 +3,7 @@ Repository pour la gestion des élèves.
 Encapsule tout l'accès aux données pour la table eleve.
 """
 
-import sqlite3
+from sqlcipher3 import dbapi2 as sqlite3
 from database.connection import get_connection
 
 

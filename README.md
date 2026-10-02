@@ -11,7 +11,7 @@ L'application a été développée dans le cadre d'un projet scolaire individuel
 ## Caractéristiques
 
 - **Interface PySide6** : Interface graphique moderne et intuitive
-- **Base de données SQLite** : Stockage local et sécurisé
+- **Base de données SQLCipher** : Données actives chiffrées avec une clé protégée par DPAPI pour l'utilisateur Windows courant
 - **Architecture en couches** : Séparation claire entre données, logique métier et interface
 - **Code lisible** : Commenté en français, avec gestion des erreurs
 - **Exécutable Windows autonome** : Pas besoin d'installer Python
@@ -48,11 +48,23 @@ L'application a été développée dans le cadre d'un projet scolaire individuel
 - Réimpression identique grâce au stockage du solde après paiement
 - Ouverture automatique avec la visionneuse par défaut
 
-### Tableau de bord
-- Indicateurs globaux : nombre d'élèves, total encaissé, total restant dû
-- Liste des élèves filtrable par statut
-- Tri par colonnes
-- Mise à jour automatique après chaque opération
+### Tableau de bord & Pilotage
+- Indicateurs globaux : nombre d'élèves, total encaissé, total restant dû, élèves non soldés
+- **Taux de recouvrement en temps réel** (%)
+- Recherche rapide et filtrage par statut
+- **Double-clic direct sur un élève** pour consulter sa fiche
+- **Exportation CSV (Excel)** du tableau en 1 clic
+- Mise à jour instantanée après chaque opération
+
+### Expérience Utilisateur (UX) & Design Moderne
+- **Design System moderne** : Palette sobre et professionnelle (Tailwind Blue, Emerald, Amber, Rose), badges pastel
+- **Barre d'outils supérieure** : Accès direct aux écrans clés et actions rapides (Nouveau versement, Nouvel élève)
+- **Raccourcis clavier** : `Ctrl+1` (Dashboard), `Ctrl+2` (Élèves), `Ctrl+P` (Paiement), `Ctrl+N` (Nouvel élève), `F5` (Actualiser), `F1` (Aide)
+- **Menu contextuel (clic droit)** sur les élèves pour actions rapides
+- **Dialogue de versement intelligent** : Raccourcis de montant ("Payer tout le solde", "50%") et aperçu dynamique du solde restant
+- **Guide d'utilisation et aide intégrés** accessibles via F1
+- **Reçus PDF certifiés** avec présentation officielle soignée
+- **Icône d'application haute résolution** intégrée (ICO et PNG)
 
 ## Structure du projet
 
@@ -63,7 +75,7 @@ edupaie/
 ├── build.bat            # Script de construction de l'exécutable
 ├── README.md           # Documentation du projet
 ├── data/
-│   └── edupaie.db      # Base de données SQLite
+│   └── edupaie-seed.db # Base de démonstration embarquée (non destinée aux données réelles)
 ├── database/
 │   ├── schema.sql      # Schéma de la base de données
 │   ├── seed.py         # Script de peuplement de la base
@@ -120,17 +132,19 @@ edupaie/
 
 ## Initialisation de la base de données
 
-Pour créer la base de données avec les données de test :
+Pour recréer le seed de démonstration (ne jamais utiliser sur une base utilisateur) :
 
 ```bash
 python database/seed.py
 ```
 
 Cette commande :
-- Crée le fichier `data/edupaie.db` à partir du schéma
+- Crée le fichier plaintext `data/edupaie-seed.db` à partir du schéma
 - Insère 20 élèves de test dans plusieurs classes
 - Insère 36 paiements variés (soldés, partiellement payés, non payés)
 - Initialise la séquence de numérotation des reçus
+
+Au premier lancement, l'application chiffre ce seed et stocke la base active dans `%LOCALAPPDATA%\EduPaie\data\edupaie.db`. La clé SQLCipher est protégée par DPAPI dans `%LOCALAPPDATA%\EduPaie\keys\database.dpapi`. Les anciennes bases adjacentes à l'EXE sont migrées après vérification; conservez une sauvegarde avant mise à jour.
 
 ## Lancement de l'application (développement)
 
@@ -169,7 +183,7 @@ Pour créer un exécutable autonome Windows :
 
 La commande PyInstaller utilisée :
 ```cmd
-pyinstaller --onefile --windowed --add-data "data/edupaie.db;data" --add-data "resources;resources" --name "EduPaie" main.py
+pyinstaller --noconfirm EduPaie.spec
 ```
 
 Options :

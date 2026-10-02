@@ -3,7 +3,7 @@ Repository pour la gestion des paiements.
 Encapsule tout l'accès aux données pour la table paiement.
 """
 
-import sqlite3
+from sqlcipher3 import dbapi2 as sqlite3
 from database.connection import get_connection
 
 

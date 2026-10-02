@@ -3,7 +3,7 @@ Service pour la construction des données de reçus.
 Récupère les données du paiement et de l'élève depuis la base.
 """
 
-import sqlite3
+from sqlcipher3 import dbapi2 as sqlite3
 from repositories.paiement_repository import PaiementRepository
 from repositories.eleve_repository import EleveRepository
 from services.solde_service import SoldeService

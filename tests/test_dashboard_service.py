@@ -3,12 +3,30 @@ Tests unitaires pour le service de tableau de bord.
 """
 
 import unittest
+import os
+from sqlcipher3 import dbapi2 as sqlite3
 from services.dashboard_service import DashboardService
 from services.solde_service import SoldeService
+from tests.database_helpers import make_encrypted_test_fixture, database_connection_patches
 
 
 class TestDashboardService(unittest.TestCase):
     """Tests pour DashboardService."""
+
+    @classmethod
+    def setUpClass(cls):
+        source_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'edupaie-seed.db')
+        cls.temp_dir, cls.db_temp, cls.key_temp = make_encrypted_test_fixture(source_path)
+        cls._patches = database_connection_patches(cls.db_temp, cls.key_temp)
+        for patcher in cls._patches:
+            patcher.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        import shutil
+        for patcher in cls._patches:
+            patcher.stop()
+        shutil.rmtree(cls.temp_dir, ignore_errors=True)
     
     def setUp(self):
         """Initialise le service avant chaque test."""
@@ -129,7 +147,6 @@ class TestDashboardService(unittest.TestCase):
     
     def test_trigger_refuse_paiement_excessif(self):
         """Vérifie que le trigger SQL refuse un paiement qui dépasse le solde."""
-        import sqlite3
         from database.connection import get_connection
         conn = get_connection()
         cursor = conn.cursor()
