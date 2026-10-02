@@ -11,6 +11,9 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
 from ui.main_window import MainWindow
+import database.connection as db_connection
+import utils.resource_utils as resource_utils
+from unittest import mock
 
 
 class TestUIActions(unittest.TestCase):
@@ -30,16 +33,20 @@ class TestUIActions(unittest.TestCase):
         cls.db_temp = os.path.join(cls.temp_dir, 'edupaie.db')
         shutil.copy2(cls.db_original, cls.db_temp)
         
-        # Modifie le chemin de la base de données
-        import utils.resource_utils
-        cls.original_get_database_path = utils.resource_utils.get_database_path
-        utils.resource_utils.get_database_path = lambda: cls.db_temp
+        # Redirige vers la copie temporaire
+        cls._patches = [
+            mock.patch.object(db_connection, 'get_database_path', lambda: cls.db_temp),
+            mock.patch.object(db_connection, 'ensure_data_dirs', lambda: None),
+            mock.patch.object(db_connection, 'copy_initial_database_if_needed', lambda: None),
+        ]
+        for p in cls._patches:
+            p.start()
     
     @classmethod
     def tearDownClass(cls):
         """Nettoie après tous les tests."""
-        import utils.resource_utils
-        utils.resource_utils.get_database_path = cls.original_get_database_path
+        for p in cls._patches:
+            p.stop()
         if os.path.exists(cls.temp_dir):
             shutil.rmtree(cls.temp_dir)
     

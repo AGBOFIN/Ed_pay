@@ -53,3 +53,17 @@ BEGIN
         WHERE eleve.id = NEW.eleve_id
     );
 END;
+
+-- Table des paramètres de l'établissement
+CREATE TABLE IF NOT EXISTS parametre (
+    cle TEXT PRIMARY KEY,
+    valeur TEXT NOT NULL
+);
+
+-- Table des classes
+CREATE TABLE IF NOT EXISTS classe (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nom TEXT UNIQUE NOT NULL,
+    frais_defaut INTEGER NOT NULL CHECK (frais_defaut >= 0),
+    actif INTEGER NOT NULL DEFAULT 1
+);

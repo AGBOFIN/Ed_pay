@@ -3,10 +3,11 @@ Fenêtre principale de l'application EduPaie.
 Contient le menu principal et la barre de statut.
 """
 
-from PySide6.QtWidgets import QMainWindow, QStatusBar, QMenuBar, QMenu, QStackedWidget
+from PySide6.QtWidgets import QMainWindow, QStatusBar, QMenuBar, QMenu, QStackedWidget, QDialog
 from PySide6.QtCore import Qt
 from ui.eleves_widget import ElevesWidget
 from ui.dashboard_widget import DashboardWidget
+from ui.parametres_dialog import ParametresDialog
 
 
 class MainWindow(QMainWindow):
@@ -62,6 +63,11 @@ class MainWindow(QMainWindow):
         afficher_tableau_action = tableau_menu.addAction("Afficher le tableau de bord")
         afficher_tableau_action.triggered.connect(self.afficher_tableau_de_bord)
         
+        # Menu Paramètres
+        parametres_menu = menu_bar.addMenu("&Paramètres")
+        parametres_action = parametres_menu.addAction("Paramètres...")
+        parametres_action.triggered.connect(self.afficher_parametres)
+        
         # Menu Aide
         aide_menu = menu_bar.addMenu("&Aide")
     
@@ -85,6 +91,15 @@ class MainWindow(QMainWindow):
         """Affiche le tableau de bord."""
         self.stack.setCurrentWidget(self.dashboard_widget)
         self.status_bar.showMessage("Tableau de bord")
+    
+    def afficher_parametres(self):
+        """Affiche le dialogue de paramètres."""
+        dialog = ParametresDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            # Rafraîchit les écrans après modification des paramètres
+            self.dashboard_widget.rafraichir()
+            self.eleves_widget.charger_donnees()
+            self.status_bar.showMessage("Paramètres mis à jour")
     
     def rafraichir_tableau_de_bord(self):
         """Rafraîchit le tableau de bord s'il est affiché."""

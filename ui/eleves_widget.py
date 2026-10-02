@@ -13,6 +13,7 @@ from services.eleve_service import EleveService, ValidationError
 from services.solde_service import SoldeService
 from services.paiement_service import PaiementService
 from services.recu_service import RecuService
+# Import direct pour éviter l'import via services/__init__.py
 from services.recu_pdf import generer_recu_pdf
 from ui.eleve_form_dialog import EleveFormDialog
 from ui.fiche_eleve_dialog import FicheEleveDialog

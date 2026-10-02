@@ -71,6 +71,48 @@ def peupler_donnees(conn):
     """Insère des données de test dans la base."""
     cursor = conn.cursor()
     
+    # Insère les classes avec des frais par défaut réalistes
+    classes = [
+        ("6ème A", 150000),
+        ("6ème B", 120000),
+        ("5ème A", 180000),
+        ("5ème B", 170000),
+        ("4ème A", 200000),
+        ("4ème B", 190000),
+        ("3ème A", 250000),
+        ("3ème B", 230000),
+    ]
+    
+    for nom, frais in classes:
+        cursor.execute(
+            "INSERT INTO classe (nom, frais_defaut) VALUES (?, ?)",
+            (nom, frais)
+        )
+    
+    print(f"{len(classes)} classes insérées")
+    
+    # Insère les paramètres par défaut
+    parametres = [
+        ("etablissement_nom", "École Exemple"),
+        ("etablissement_adresse", "123 Rue de l'École"),
+        ("etablissement_telephone", "01 23 45 67 89"),
+        ("etablissement_email", "contact@ecole-exemple.fr"),
+        ("etablissement_devise", "FCFA"),
+        ("etablissement_logo", ""),
+        ("etablissement_pied_page", "Merci pour votre confiance !"),
+        ("annee_scolaire", "2025-2026"),
+        ("recu_prefixe", "REC"),
+        ("paiement_modes", "espèces,chèque,virement,mobile money"),
+    ]
+    
+    for cle, valeur in parametres:
+        cursor.execute(
+            "INSERT INTO parametre (cle, valeur) VALUES (?, ?)",
+            (cle, valeur)
+        )
+    
+    print(f"{len(parametres)} paramètres insérés")
+    
     # Liste des élèves avec différentes classes et années
     # Montants en francs CFA (50 000 à 350 000 FCFA)
     eleves = [
