@@ -7,6 +7,7 @@ import os
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 from services.solde_service import SoldeService
+from services.parametre_service import ParametreService
 from utils.resource_utils import get_recus_dir, ensure_data_dirs
 
 
@@ -41,9 +42,13 @@ class RecuPDF:
         # Configuration des polices (Helvetica supporte le latin-1)
         self.pdf.set_font('Helvetica', '', 12)
         
+        # Lit les paramètres de l'établissement
+        parametre_service = ParametreService()
+        etablissement = parametre_service.obtenir_etablissement()
+        
         # Entête : nom de l'établissement
         self.pdf.set_font('Helvetica', 'B', 18)
-        self.pdf.cell(0, 10, donnees_recu['etablissement'], new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        self.pdf.cell(0, 10, etablissement['nom'], new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         self.pdf.ln(5)
         
         # Titre : REÇU

@@ -7,11 +7,8 @@ import sqlite3
 import re
 from repositories.eleve_repository import EleveRepository
 from services.solde_service import SoldeService
-
-
-class ValidationError(Exception):
-    """Exception levée lors d'une erreur de validation métier."""
-    pass
+from services.parametre_service import ParametreService
+from services.exceptions import ValidationError
 
 
 class EleveService:
@@ -194,12 +191,13 @@ class EleveService:
     
     def lister_classes(self):
         """
-        Liste toutes les classes distinctes.
+        Liste toutes les classes actives avec leurs frais par défaut.
         
         Returns:
-            list: Liste des noms de classes
+            list: Liste de dictionnaires {'nom': str, 'frais_defaut': int}
         """
         try:
-            return self.repository.lister_classes()
-        except sqlite3.Error as e:
+            parametre_service = ParametreService()
+            return parametre_service.lister_classes_actives()
+        except Exception as e:
             raise ValidationError(f"Erreur lors de la liste des classes : {str(e)}")

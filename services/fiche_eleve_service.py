@@ -6,7 +6,7 @@ Regroupe les données de l'élève et ses paiements.
 from repositories.eleve_repository import EleveRepository
 from repositories.paiement_repository import PaiementRepository
 from services.solde_service import SoldeService
-from services.eleve_service import ValidationError
+from services.exceptions import ValidationError
 
 
 class FicheEleveService:

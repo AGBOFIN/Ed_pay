@@ -7,7 +7,7 @@ import sqlite3
 from repositories.paiement_repository import PaiementRepository
 from repositories.eleve_repository import EleveRepository
 from services.solde_service import SoldeService
-from services.eleve_service import ValidationError
+from services.exceptions import ValidationError
 
 
 class RecuService:

@@ -6,7 +6,7 @@ Assemble les indicateurs globaux pour le dashboard.
 from repositories.dashboard_repository import DashboardRepository
 from repositories.eleve_repository import EleveRepository
 from services.solde_service import SoldeService
-from services.eleve_service import ValidationError
+from services.exceptions import ValidationError
 
 
 class DashboardService:
