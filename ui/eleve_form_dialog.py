@@ -19,11 +19,12 @@ class EleveFormDialog(QDialog):
         Args:
             parent: Widget parent
             eleve_data: Dictionnaire avec les données de l'élève (pour modification)
-            classes_disponibles: Liste des classes disponibles
+            classes_disponibles: Liste de dictionnaires {'nom': str, 'frais_defaut': int}
         """
         super().__init__(parent)
         self.eleve_data = eleve_data
         self.classes_disponibles = classes_disponibles or []
+        self.classes_map = {c['nom']: c['frais_defaut'] for c in self.classes_disponibles}
         self.setup_ui()
         
         # Pré-remplissage en mode modification
@@ -54,7 +55,9 @@ class EleveFormDialog(QDialog):
         self.classe_combo.setEditable(True)
         self.classe_combo.setPlaceholderText("Classe")
         if self.classes_disponibles:
-            self.classe_combo.addItems(self.classes_disponibles)
+            for classe in self.classes_disponibles:
+                self.classe_combo.addItem(f"{classe['nom']} ({classe['frais_defaut']} FCFA)", classe['nom'])
+        self.classe_combo.currentIndexChanged.connect(self.on_classe_change)
         layout.addRow("Classe *:", self.classe_combo)
         
         # Champ année scolaire
@@ -80,6 +83,19 @@ class EleveFormDialog(QDialog):
         self.buttons.rejected.connect(self.reject)
         layout.addRow(self.buttons)
     
+    def on_classe_change(self, index):
+        """
+        Gère le changement de classe pour pré-remplir les frais par défaut.
+        
+        Args:
+            index: Index de la classe sélectionnée
+        """
+        if index >= 0:
+            classe_nom = self.classe_combo.itemData(index)
+            if classe_nom and classe_nom in self.classes_map:
+                # Pré-remplit les frais par défaut
+                self.total_du_spin.setValue(self.classes_map[classe_nom])
+    
     def remplir_champs(self, eleve_data):
         """
         Remplit les champs avec les données de l'élève.
@@ -91,10 +107,13 @@ class EleveFormDialog(QDialog):
         self.prenom_edit.setText(eleve_data.get('prenom', ''))
         
         classe = eleve_data.get('classe', '')
-        index = self.classe_combo.findText(classe)
-        if index >= 0:
-            self.classe_combo.setCurrentIndex(index)
+        # Cherche la classe dans le combo box par itemData
+        for i in range(self.classe_combo.count()):
+            if self.classe_combo.itemData(i) == classe:
+                self.classe_combo.setCurrentIndex(i)
+                break
         else:
+            # Si non trouvée, affiche simplement le nom
             self.classe_combo.setEditText(classe)
         
         self.annee_edit.setText(eleve_data.get('annee_scolaire', ''))
@@ -107,10 +126,17 @@ class EleveFormDialog(QDialog):
         Returns:
             dict: Dictionnaire avec les données du formulaire
         """
+        # Récupère le nom de la classe (itemData si sélectionné, sinon text)
+        classe_nom = self.classe_combo.currentData()
+        if classe_nom is None:
+            classe_nom = self.classe_combo.currentText()
+            # Nettoie le nom de classe si l'utilisateur a saisi manuellement
+            classe_nom = classe_nom.split(' (')[0] if ' (' in classe_nom else classe_nom
+        
         return {
             'nom': self.nom_edit.text(),
             'prenom': self.prenom_edit.text(),
-            'classe': self.classe_combo.currentText(),
+            'classe': classe_nom,
             'annee_scolaire': self.annee_edit.text(),
             'total_du': self.total_du_spin.value()
         }
